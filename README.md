@@ -1,10 +1,12 @@
 When I first read about OMT during the release of vMix29 and saw the DLLs, I was determined to get something like this up and running. This is the result. It runs flawlessly on all my PCs 
+With the help of Copilot and a lot of patience, **we** managed it. 
 All Intel machines with Nvidia or Intel graphics. Unfortunately, I was unable to control the bandwidth.  
-In the first version of vMix29, a connection required approx. 50-80 Mbits, in the current version it's approx. 150-170 Mbits.  
-Perhaps someone else can continue researching this. For me, at the moment, it's “goal achieved.”  
+In the first version of vMix29, a connection required approx. 50-80 Mbits, in the current version it's approx. 150-170 Mbits. But maybe my first project was 50i and now it's 50p.   
+Perhaps someone would like to continue the research on this application — or it might inspire ideas for a better app. For me, at the moment, it's “goal achieved.”  
 
 Video soon worked perfectly with the BGRA format.  
-Making Audio working was a bit more tricky, but with the help of Copilot and a lot of patience, **we** managed it.  
+Making Audio working was a bit more tricky.
+Copilot then also commented on the finished code neatly.
 Audio Conversion: vMix/OMTMediaFrame to NAudio. The vMix/OMT protocol delivers audio frames in a planar 32-bit floating point format (FPA1).    
 This means that for each channel, all samples are stored sequentially (channel 1 samples, then channel 2 samples, etc.), rather than interleaved.    
 Steps for conversion to NAudio:  
