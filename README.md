@@ -3,7 +3,7 @@ All Intel machines with Nvidia or Intel graphics. Unfortunately, I was unable to
 In the first version of vMix29, a connection required approx. 50-80 Mbits, in the current version it's approx. 150-170 Mbits.  
 Perhaps someone else can continue researching this. For me, at the moment, it's “goal achieved.”  
 
-Making Audio working was a bit tricky,But with the help of Copilot, **we** did it.  
+Making Audio working was a bit tricky, but with the help of Copilot, **we** did it.  
 Audio Conversion: vMix/OMTMediaFrame to NAudio. The vMix/OMT protocol delivers audio frames in a planar 32-bit floating point format (FPA1).    
 This means that for each channel, all samples are stored sequentially (channel 1 samples, then channel 2 samples, etc.), rather than interleaved.    
 Steps for conversion to NAudio:  
