@@ -1,5 +1,5 @@
-When I first read about OMT during the release of vMix29 and saw the DLLs, I was determined to get something like this up and running. This is the result. It runs flawlessly on all my PCs 
-With the help of Copilot and a lot of patience, **we** managed it. 
+When I first read about OMT during the release of vMix29 and saw the DLLs, I was determined to get something like this up and running. This is the result. It runs flawlessly on all my PCs.  
+With the help of Copilot and a lot of patience, **we** managed it.  
 All Intel machines with Nvidia or Intel graphics. Unfortunately, I was unable to control the bandwidth.  
 In the first version of vMix29, a connection required approx. 50-80 Mbits, in the current version it's approx. 150-170 Mbits. But maybe my first project was 50i and now it's 50p.   
 Perhaps someone would like to continue the research on this application — or it might inspire ideas for a better app. For me, at the moment, it's “goal achieved.”  
