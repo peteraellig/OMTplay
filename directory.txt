@@ -1,0 +1,24 @@
+ Datentr„ger in Laufwerk C: ist C_Drive
+ Volumeseriennummer: C068-E938
+
+ Verzeichnis von C:\Users\WIN11\Dropbox\VB\Projects\OMTplay\OMTplay
+
+19.08.2025  22:53    <DIR>          .
+19.08.2025  13:34    <DIR>          ..
+18.08.2025  21:33    <DIR>          bin
+19.08.2025  22:53                 0 directory.txt
+19.08.2025  13:04            17'178 Form1.cs
+18.08.2025  16:10             9'573 Form1.Designer.cs
+18.08.2025  16:10           353'886 Form1.resx
+16.08.2025  09:21         6'927'872 libomt.dll
+16.08.2025  09:20           108'544 libomtnet.dll
+16.08.2025  09:20           547'840 libvmx.dll
+19.08.2025  13:06    <DIR>          obj
+19.08.2025  13:05             1'597 OMTplay.csproj
+18.08.2025  16:06               450 OMTplay.csproj.user
+17.08.2025  20:13           231'892 OMTplay.ico
+18.08.2025  11:37               504 Program.cs
+18.08.2025  16:06    <DIR>          Properties
+18.08.2025  15:03    <DIR>          third_party
+              11 Datei(en),      8'199'336 Bytes
+               6 Verzeichnis(se), 664'381'718'528 Bytes frei

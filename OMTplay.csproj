@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StartupObject>OMTplay.Program</StartupObject>
+    <ApplicationIcon>OMTplay.ico</ApplicationIcon>
+    <PlatformTarget>x64</PlatformTarget>
+    <Title>OMTplay</Title>
+    <Version>1.0.0.4</Version>
+    <Authors></Authors>
+    <Company>Peter Aellig</Company>
+    <Copyright>Peter Aellig</Copyright>
+    <PackageIcon>OMT.png</PackageIcon>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="OMTplay.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\OMT.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Core" Version="2.2.1" />
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="libomtnet">
+      <HintPath>third_party\omt\bin\libomtnet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="libomt.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libomtnet.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libvmx.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
