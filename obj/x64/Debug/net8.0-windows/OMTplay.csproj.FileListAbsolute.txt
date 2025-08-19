@@ -21,3 +21,4 @@ C:\Users\WIN11\Dropbox\VB\Projects\OMTplay\OMTplay\obj\x64\Debug\net8.0-windows\
 C:\Users\WIN11\Dropbox\VB\Projects\OMTplay\OMTplay\obj\x64\Debug\net8.0-windows\OMTplay.pdb
 C:\Users\WIN11\Dropbox\VB\Projects\OMTplay\OMTplay\obj\x64\Debug\net8.0-windows\OMTplay.genruntimeconfig.cache
 C:\Users\WIN11\Dropbox\VB\Projects\OMTplay\OMTplay\obj\x64\Debug\net8.0-windows\ref\OMTplay.dll
+C:\Users\WIN11\Dropbox\VB\Projects\OMTplay\OMTplay\obj\x64\Debug\net8.0-windows\OMTplay.sourcelink.json

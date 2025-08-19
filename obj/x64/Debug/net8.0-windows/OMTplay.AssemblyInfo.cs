@@ -15,7 +15,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Peter Aellig")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.4")]
+<<<<<<< HEAD
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0.4+c23176b38e69d431243b937a83af73e4cb803843")]
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0.4+14a21803d5f60a0847b7e0d21f4e6ce29725085c")]
+>>>>>>> 2050241 (Initial commit)
 [assembly: System.Reflection.AssemblyProductAttribute("OMTplay")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OMTplay")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.4")]

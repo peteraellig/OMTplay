@@ -1,7 +1,7 @@
-using libomtnet; // bringt OMTDiscovery, OMTReceive, OMTFrameType,
+using libomtnet; // brings OMTDiscovery, OMTReceive, OMTFrameType
 using Microsoft.VisualBasic;
 using NAudio.CoreAudioApi;
-using NAudio.Wasapi;    // für WasapiOut
+using NAudio.Wasapi;    // for WasapiOut
 using NAudio.Wave;
 using System;
 using System.Diagnostics;
@@ -16,21 +16,21 @@ namespace OMTplay
 {
     public partial class Form1 : Form
     {
-        // OMT SDK Objekte (nullable!)
+        // --- OMT SDK objects (connection) ---
         private OMTDiscovery? _discovery;
         private OMTReceive? _receiver;
         private Thread? _rxThread;
         private CancellationTokenSource? _cts;
 
-        // Audio (NAudio) – Auto-Detect
+        // --- Audio (NAudio) ---
         private IWavePlayer? _waveOut;
         private BufferedWaveProvider? _audioBuffer;
         private bool _audioInitDone = false;
-        private bool _audioIsFloat = true;        // wird beim ersten Frame ermittelt
-        private int _audioChannels = 2;           // Standard Stereo
+        private bool _audioIsFloat = true;        // determined on first frame
+        private int _audioChannels = 2;           // default stereo
         private const int AUDIO_SR = 48000;       // 48 kHz
 
-        // Vollbild-Status
+        // --- Fullscreen state ---
         private bool _isFullscreen = false;
         private FormBorderStyle _oldBorderStyle;
         private Rectangle _oldBounds;
@@ -39,7 +39,7 @@ namespace OMTplay
         {
             InitializeComponent();
 
-            // Events zuweisen
+            // --- UI event assignments ---
             _btnRefresh.Click += (s, e) => RefreshSources();
             _btnConnect.Click += (s, e) => ConnectSelected();
             _btnDisconnect.Click += (s, e) => Disconnect();
@@ -50,6 +50,7 @@ namespace OMTplay
             FormClosing += Form1_FormClosing;
         }
 
+        // --- UI: Fullscreen toggle ---
         private void ToggleFullscreen()
         {
             if (!_isFullscreen)
@@ -59,7 +60,7 @@ namespace OMTplay
                 _oldBounds = this.Bounds;
                 FormBorderStyle = FormBorderStyle.None;
                 WindowState = FormWindowState.Maximized;
-                flowLayoutPanel1.Visible = false; // Panel komplett ausblenden!
+                flowLayoutPanel1.Visible = false; // Hide menu panel
                 _videoBox.Dock = DockStyle.Fill;
                 _videoBox.Focus();
                 Cursor.Hide();
@@ -69,18 +70,18 @@ namespace OMTplay
                 _isFullscreen = false;
                 FormBorderStyle = _oldBorderStyle;
                 WindowState = FormWindowState.Normal;
-                // Setze Location und Size explizit zurück
                 this.Location = _oldBounds.Location;
                 this.Size = _oldBounds.Size;
-                flowLayoutPanel1.Visible = true; // Panel wieder anzeigen!
-                flowLayoutPanel1.BringToFront(); // Panel in den Vordergrund holen
-                flowLayoutPanel1.Dock = DockStyle.Top; // Optional: Dock-Einstellung setzen
+                flowLayoutPanel1.Visible = true; // Show menu panel
+                flowLayoutPanel1.BringToFront();
+                flowLayoutPanel1.Dock = DockStyle.Top;
                 _videoBox.Dock = DockStyle.Fill;
                 Cursor.Show();
-                this.PerformLayout(); // Layout aktualisieren
+                this.PerformLayout();
             }
         }
 
+        // --- UI: Keyboard event for fullscreen exit ---
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
         {
             if (_isFullscreen && e.KeyCode == Keys.Escape)
@@ -89,6 +90,7 @@ namespace OMTplay
             }
         }
 
+        // --- Connection: Form load, OMT discovery initialization ---
         private void Form1_Load(object? sender, EventArgs e)
         {
             try
@@ -105,25 +107,26 @@ namespace OMTplay
             try
             {
                 var asm = typeof(OMTDiscovery).Assembly.Location;
-                _lblStatus.Text = "OMT geladen aus: " + asm;
-                _discovery = OMTDiscovery.GetInstance(); // triggert natives Laden
+                _lblStatus.Text = "OMT loaded from: " + asm;
+                _discovery = OMTDiscovery.GetInstance(); // triggers native loading
             }
             catch (DllNotFoundException ex)
             {
-                MessageBox.Show("Native DLL fehlt: " + ex.Message);
+                MessageBox.Show("Native DLL missing: " + ex.Message);
             }
             catch (BadImageFormatException ex)
             {
-                MessageBox.Show("Plattform-Mismatch (x64 nötig): " + ex.Message);
+                MessageBox.Show("Platform mismatch (x64 required): " + ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("OMT init Fehler: " + ex.Message);
+                MessageBox.Show("OMT init error: " + ex.Message);
             }
             this.Text = "OMTplay 1.0.0.4 - Peter Aellig";
             _btnDisconnect.Visible = false;
         }
 
+        // --- Connection: Discover available sources ---
         private void RefreshSources()
         {
             try
@@ -142,6 +145,7 @@ namespace OMTplay
             }
         }
 
+        // --- Connection: Connect to selected source ---
         private void ConnectSelected()
         {
             if (_cbSources.SelectedItem is not string address || string.IsNullOrWhiteSpace(address))
@@ -170,7 +174,7 @@ namespace OMTplay
 
                 _audioInitDone = false;
 
-                // Buttons nach erfolgreichem Connect setzen
+                // UI: Update button states after connect
                 _btnConnect.Enabled = false;
                 _btnConnect.Visible = false;
                 _btnDisconnect.Visible = true;
@@ -189,6 +193,7 @@ namespace OMTplay
             }
         }
 
+        // --- Connection: Disconnect from source and cleanup ---
         private void Disconnect()
         {
             try
@@ -199,7 +204,7 @@ namespace OMTplay
                     if (!_rxThread.Join(1000)) _rxThread.Interrupt();
                 }
             }
-            catch (Exception ex) { Debug.WriteLine("Thread-Stop-Fehler: " + ex); }
+            catch (Exception ex) { Debug.WriteLine("Thread stop error: " + ex); }
             finally
             {
                 _rxThread = null;
@@ -214,19 +219,20 @@ namespace OMTplay
             _waveOut = null;
             _audioBuffer = null;
 
-            // Buttons nach Disconnect setzen
+            // UI: Update button states after disconnect
             _btnConnect.Enabled = true;
             _btnConnect.Visible = true;
             _btnDisconnect.Visible = false;
             _btnDisconnect.Enabled = false;
 
-            // Labels zurücksetzen
+            // UI: Reset labels
             _lblConnected.Text = "Disconnected";
             _lblConnected.ForeColor = Color.Red;
             _lblResolution.Text = "-";
             _lblTimestamp.Text = "-";
         }
 
+        // --- Audio: Initialize audio output and buffer ---
         private void EnsureAudioInit(int sampleRate, int channels, bool isFloat,
                              int desiredLatencyMs = 180, double bufferSeconds = 0.8)
         {
@@ -235,7 +241,7 @@ namespace OMTplay
             _waveOut?.Stop();
             _waveOut?.Dispose();
 
-            // WasapiOut ist oft stabiler als WaveOutEvent
+            // WasapiOut is often more stable than WaveOutEvent
             _waveOut = new WasapiOut(AudioClientShareMode.Shared, true, desiredLatencyMs);
 
             WaveFormat fmt = isFloat
@@ -258,6 +264,7 @@ namespace OMTplay
             _audioInitDone = true;
         }
 
+        // --- Main receive loop: handles audio and video frames ---
         private void ReceiveLoop(CancellationToken ct)
         {
             var frame = new OMTMediaFrame();
@@ -268,40 +275,45 @@ namespace OMTplay
                 {
                     bool handled = false;
 
-                    // AUDIO: alle wartenden Frames ohne Wartezeit abholen und puffern
+                    // --- AUDIO: receive and buffer all waiting frames ---
                     int drained = 0;
                     while (_receiver != null && _receiver.Receive(OMTFrameType.Audio, 0, ref frame))
                     {
                         if (frame.Data != IntPtr.Zero && frame.DataLength > 0)
                         {
-                            // 1) Beim ersten Audio-Frame: Format automatisch erkennen
+                            // 1) On first audio frame: auto-detect format
                             if (!_audioInitDone)
                             {
                                 int channelsGuess = frame.Channels > 0 ? frame.Channels : 2;
                                 int sampleRate = frame.SampleRate > 0 ? frame.SampleRate : 48000;
-                                bool looksLikeFloat = true; // vMix liefert immer Float32
+                                bool looksLikeFloat = true; // vMix always delivers Float32
 
                                 EnsureAudioInit(sampleRate, channelsGuess, looksLikeFloat, desiredLatencyMs: 100, bufferSeconds: 2.0);
                             }
 
-                            // 2) Daten in passendem Format in den Buffer schieben
+                            // 2) Push data in correct format to buffer
                             if (_audioBuffer != null)
                             {
                                 if (_audioIsFloat)
                                 {
-                                    // Planar zu Interleaved konvertieren
+                                    // Convert planar to interleaved
                                     int samplesPerChannel = frame.SamplesPerChannel;
                                     int channels = _audioChannels;
+                                    // 1. Copy planar data from unmanaged buffer
                                     float[] planar = new float[samplesPerChannel * channels];
                                     Marshal.Copy(frame.Data, planar, 0, planar.Length);
 
+                                    // 2. Convert planar to interleaved
                                     float[] interleaved = new float[samplesPerChannel * channels];
                                     for (int i = 0; i < samplesPerChannel; i++)
                                         for (int c = 0; c < channels; c++)
                                             interleaved[i * channels + c] = planar[c * samplesPerChannel + i];
 
+                                    // 3. Convert to byte array
                                     byte[] bytes = new byte[interleaved.Length * 4];
                                     Buffer.BlockCopy(interleaved, 0, bytes, 0, bytes.Length);
+
+                                    // 4. Add to NAudio buffer
                                     _audioBuffer.AddSamples(bytes, 0, bytes.Length);
                                 }
                                 else
@@ -316,7 +328,7 @@ namespace OMTplay
                         if (++drained >= 32) break;
                     }
 
-                    // VIDEO holen (etwas längerer Timeout)
+                    // --- VIDEO: receive next frame (with longer timeout) ---
                     if (_receiver != null && _receiver.Receive(OMTFrameType.Video, 20, ref frame))
                     {
                         var bmp = CreateBitmapFromBGRA(frame);
@@ -346,15 +358,16 @@ namespace OMTplay
                     BeginInvoke(new Action(() =>
                     {
                         _lblStatus.Text = "Receive error: " + ex.Message;
-                        MessageBox.Show(this, "Fehler im Empfangsloop:\n" + ex.Message, "OMT Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, "Error in receive loop:\n" + ex.Message, "OMT Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }));
                 }
             }
         }
 
+        // --- Video: Convert BGRA frame to Bitmap ---
         private static Bitmap? CreateBitmapFromBGRA(OMTMediaFrame frame)
         {
-            // Zusätzliche Validierung
+            // Additional validation
             if (frame.Data == IntPtr.Zero || frame.Width <= 0 || frame.Height <= 0 || frame.Stride <= 0)
                 return null;
 
@@ -383,14 +396,16 @@ namespace OMTplay
             }
             catch (ArgumentException ex)
             {
-                // Fehler loggen oder ignorieren
-                Debug.WriteLine("Bitmap-Fehler: " + ex.Message);
+                // Log or ignore error
+                Debug.WriteLine("Bitmap error: " + ex.Message);
                 return null;
             }
         }
 
+        // --- Connection: Cleanup on form closing ---
         private void Form1_FormClosing(object? sender, FormClosingEventArgs e) => Disconnect();
 
+        // --- UI: Exit confirmation dialog ---
         private void ExitWithConfirmation()
         {
             var result = MessageBox.Show(this, "Are you sure you want to exit?", "Confirm Exit",
@@ -402,9 +417,10 @@ namespace OMTplay
             }
         }
 
+        // --- Video: Format timestamp for display ---
         private static string FormatTimestamp(long timestamp, int frameRateN, int frameRateD)
         {
-            // 1 Sekunde = 10.000.000 Ticks
+            // 1 second = 10,000,000 ticks
             long totalSeconds = timestamp / 10_000_000;
             long remainder = timestamp % 10_000_000;
 
@@ -412,20 +428,21 @@ namespace OMTplay
             int minutes = (int)((totalSeconds % 3600) / 60);
             int seconds = (int)(totalSeconds % 60);
 
-            // Berechne Frames aus Rest und Framerate
-            double frameRate = frameRateD != 0 ? (double)frameRateN / frameRateD : 25.0; // Fallback 25fps
+            // Calculate frame from remainder and framerate
+            double frameRate = frameRateD != 0 ? (double)frameRateN / frameRateD : 25.0; // fallback 25fps
             int frame = (int)(remainder * frameRate / 10_000_000);
 
             return $"{hours:D2}:{minutes:D2}:{seconds:D2}:{frame:D2}";
         }
 
+        // --- Video: Format resolution and framerate for display ---
         private static string FormatResolution(OMTMediaFrame frame)
         {
-            // Framerate berechnen
+            // Calculate framerate
             double fps = frame.FrameRateD != 0 ? (double)frame.FrameRateN / frame.FrameRateD : 0;
-            // Höhe als "p" (z.B. 1080p)
+            // Height as "p" (e.g. 1080p)
             string res = $"{frame.Height}p";
-            // Framerate als Ganzzahl, falls möglich
+            // Framerate as integer if possible
             string fpsStr = fps > 0 ? $"{Math.Round(fps)}" : "?";
             return $"{res}{fpsStr}";
         }
