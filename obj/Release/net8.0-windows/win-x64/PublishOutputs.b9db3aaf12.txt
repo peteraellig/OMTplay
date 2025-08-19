@@ -1,0 +1,9 @@
+C:\TEMP\OMT\1.0.0.2\OMTplay.pdb
+C:\TEMP\OMT\1.0.0.2\libomt.dll
+C:\TEMP\OMT\1.0.0.2\libvmx.dll
+C:\TEMP\OMT\1.0.0.2\D3DCompiler_47_cor3.dll
+C:\TEMP\OMT\1.0.0.2\PenImc_cor3.dll
+C:\TEMP\OMT\1.0.0.2\PresentationNative_cor3.dll
+C:\TEMP\OMT\1.0.0.2\vcruntime140_cor3.dll
+C:\TEMP\OMT\1.0.0.2\wpfgfx_cor3.dll
+C:\TEMP\OMT\1.0.0.2\OMTplay.exe
