@@ -5,6 +5,7 @@ changelog OMTplay
 
 1.0.0.4		works, but only with 2 channel setting or Master only (M or MA)  
 1.0.0.5		works with 8 channels tested, you can choose which pair ( M or A or B or C)  
+          handle more than 8 channels caused problems, you can send as many as you want, we only process 8 channels
 1.0.0.6		shows amount of received audio channels  
 
 When I first read about OMT during the release of vMix29 and saw the DLLs, I was determined to get something like this up and running. This is the result. It runs flawlessly on all my PCs.  
