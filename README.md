@@ -1,3 +1,12 @@
+
+Version 1.0.0.6
+
+changelog OMTplay
+
+1.0.0.4		works, but only with 2 channel setting or Master only (M or MA)  
+1.0.0.5		works with 8 channels tested, you can choose which pair ( M or A or B or C)  
+1.0.0.6		shows amount of received audio channels  
+
 When I first read about OMT during the release of vMix29 and saw the DLLs, I was determined to get something like this up and running. This is the result. It runs flawlessly on all my PCs.  
 With the help of Copilot and a lot of patience, **we** managed it. Copilot then also commented on the finished code neatly.  
 All Intel machines with Nvidia or Intel graphics. Unfortunately, I was unable to control the bandwidth.  
