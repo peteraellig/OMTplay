@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 
+//DONT visible  _lblsStatus !
 namespace OMTplay
 {
     public partial class Form1 : Form
@@ -85,10 +86,15 @@ namespace OMTplay
                 WindowState = FormWindowState.Normal;
                 this.Location = _oldBounds.Location;
                 this.Size = _oldBounds.Size;
-                flowLayoutPanel1.Visible = true; // Show menu panel
+                flowLayoutPanel1.Visible = true; // Menüleiste anzeigen
                 flowLayoutPanel1.BringToFront();
                 flowLayoutPanel1.Dock = DockStyle.Top;
-                _videoBox.Dock = DockStyle.Fill;
+
+                // Setze die VideoBox auf absolute Werte
+                _videoBox.Dock = DockStyle.None; // Entferne das Andocken
+                _videoBox.Location = new Point(0, 106); // Setze die Position
+                _videoBox.Size = new Size(1030, 565); // Setze die Größe
+
                 Cursor.Show();
                 this.PerformLayout();
             }
@@ -124,7 +130,7 @@ namespace OMTplay
             catch (BadImageFormatException ex) { MessageBox.Show("Platform mismatch (x64 required): " + ex.Message); }
             catch (Exception ex) { MessageBox.Show("OMT init error: " + ex.Message); }
 
-            this.Text = "OMTplay 1.0.0.5 - Peter Aellig / Nicos Manadis";
+            this.Text = "OMTplay 1.0.0.6 - Peter Aellig / Nicos Manadis";
             _btnDisconnect.Visible = false;
             radioButton1.Checked = true; // Set default stereo pair selection    
         }
@@ -144,7 +150,7 @@ namespace OMTplay
             }
             catch (Exception ex)
             {
-               _lblStatus.Text = "Discovery error: " + ex.Message;
+                _lblStatus.Text = "Discovery error: " + ex.Message;
             }
         }
 
@@ -235,6 +241,7 @@ namespace OMTplay
             _lblConnected.ForeColor = Color.Red;
             _lblResolution.Text = "-";
             _lblTimestamp.Text = "-";
+            _lblAudiochannels.Text = "Audio Channels (max. 8)";
         }
 
         // --- Audio device factory (WASAPI + fallback WaveOutEvent) ---
@@ -335,7 +342,7 @@ namespace OMTplay
             _waveOut.Play();
 
             if (_downmixToStereo && channels > 2)
-            _audioInitDone = true;
+                _audioInitDone = true;
         }
 
         // Convert float [-1..1] -> 16-bit PCM
@@ -407,10 +414,17 @@ namespace OMTplay
                     {
                         if (frame.Data != IntPtr.Zero && frame.DataLength > 0)
                         {
+                            BeginInvoke(new Action(() =>
+                            {
+                                // Begrenzung der Kanäle auf maximal 8
+                                int limitedChannels = Math.Min(frame.Channels, 8);
+                                _lblAudiochannels.Text = $"Received audio channels: {limitedChannels}";
+                            }));
+
                             // 1) On first audio frame: auto-detect format
                             if (!_audioInitDone)
                             {
-                                int channelsGuess = frame.Channels > 0 ? frame.Channels : 2;
+                                int channelsGuess = Math.Min(frame.Channels > 0 ? frame.Channels : 2, 8);
                                 int sampleRate = frame.SampleRate > 0 ? frame.SampleRate : 48000;
                                 bool looksLikeFloat = true; // vMix always delivers Float32
 

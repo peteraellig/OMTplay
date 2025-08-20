@@ -31,6 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             flowLayoutPanel1 = new FlowLayoutPanel();
             _buttonPanel = new Panel();
+            _lblAudiochannels = new Label();
             label1 = new Label();
             radioButton4 = new RadioButton();
             radioButton3 = new RadioButton();
@@ -58,12 +59,13 @@
             flowLayoutPanel1.Controls.Add(_buttonPanel);
             flowLayoutPanel1.Location = new Point(0, 0);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(1055, 73);
+            flowLayoutPanel1.Size = new Size(1034, 100);
             flowLayoutPanel1.TabIndex = 0;
             // 
             // _buttonPanel
             // 
             _buttonPanel.BackColor = Color.Silver;
+            _buttonPanel.Controls.Add(_lblAudiochannels);
             _buttonPanel.Controls.Add(label1);
             _buttonPanel.Controls.Add(radioButton4);
             _buttonPanel.Controls.Add(radioButton3);
@@ -82,14 +84,23 @@
             _buttonPanel.Location = new Point(0, 0);
             _buttonPanel.Margin = new Padding(0);
             _buttonPanel.Name = "_buttonPanel";
-            _buttonPanel.Size = new Size(1035, 73);
+            _buttonPanel.Size = new Size(1035, 100);
             _buttonPanel.TabIndex = 0;
+            // 
+            // _lblAudiochannels
+            // 
+            _lblAudiochannels.BackColor = SystemColors.Control;
+            _lblAudiochannels.Location = new Point(8, 76);
+            _lblAudiochannels.Name = "_lblAudiochannels";
+            _lblAudiochannels.Size = new Size(273, 15);
+            _lblAudiochannels.TabIndex = 15;
+            _lblAudiochannels.Text = "Audio Channels (max. 8)";
             // 
             // label1
             // 
             label1.AutoSize = true;
             label1.ForeColor = SystemColors.ControlText;
-            label1.Location = new Point(319, 4);
+            label1.Location = new Point(303, 76);
             label1.Name = "label1";
             label1.Size = new Size(42, 15);
             label1.TabIndex = 14;
@@ -98,7 +109,7 @@
             // radioButton4
             // 
             radioButton4.AutoSize = true;
-            radioButton4.Location = new Point(564, 4);
+            radioButton4.Location = new Point(548, 74);
             radioButton4.Name = "radioButton4";
             radioButton4.Size = new Size(59, 19);
             radioButton4.TabIndex = 13;
@@ -109,7 +120,7 @@
             // radioButton3
             // 
             radioButton3.AutoSize = true;
-            radioButton3.Location = new Point(495, 3);
+            radioButton3.Location = new Point(479, 73);
             radioButton3.Name = "radioButton3";
             radioButton3.Size = new Size(59, 19);
             radioButton3.TabIndex = 12;
@@ -120,7 +131,7 @@
             // radioButton2
             // 
             radioButton2.AutoSize = true;
-            radioButton2.Location = new Point(430, 3);
+            radioButton2.Location = new Point(414, 73);
             radioButton2.Name = "radioButton2";
             radioButton2.Size = new Size(59, 19);
             radioButton2.TabIndex = 11;
@@ -131,7 +142,7 @@
             // radioButton1
             // 
             radioButton1.AutoSize = true;
-            radioButton1.Location = new Point(368, 3);
+            radioButton1.Location = new Point(352, 73);
             radioButton1.Name = "radioButton1";
             radioButton1.Size = new Size(59, 19);
             radioButton1.TabIndex = 10;
@@ -193,7 +204,7 @@
             _btnRefresh.BackColor = SystemColors.Control;
             _btnRefresh.FlatAppearance.BorderSize = 0;
             _btnRefresh.FlatStyle = FlatStyle.Flat;
-            _btnRefresh.Location = new Point(300, 24);
+            _btnRefresh.Location = new Point(300, 25);
             _btnRefresh.Name = "_btnRefresh";
             _btnRefresh.Size = new Size(61, 23);
             _btnRefresh.TabIndex = 4;
@@ -205,7 +216,7 @@
             _btnConnect.BackColor = Color.PowderBlue;
             _btnConnect.FlatAppearance.BorderSize = 0;
             _btnConnect.FlatStyle = FlatStyle.Flat;
-            _btnConnect.Location = new Point(629, 17);
+            _btnConnect.Location = new Point(628, 17);
             _btnConnect.Name = "_btnConnect";
             _btnConnect.Size = new Size(75, 38);
             _btnConnect.TabIndex = 3;
@@ -251,9 +262,10 @@
             // 
             // _videoBox
             // 
-            _videoBox.Location = new Point(6, 79);
+            _videoBox.Dock = DockStyle.None;
+            _videoBox.Location = new Point(0, 106);
             _videoBox.Name = "_videoBox";
-            _videoBox.Size = new Size(1004, 565);
+            _videoBox.Size = new Size(1030, 565);
             _videoBox.SizeMode = PictureBoxSizeMode.Zoom;
             _videoBox.TabIndex = 10;
             _videoBox.TabStop = false;
@@ -263,12 +275,12 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Black;
-            ClientSize = new Size(1030, 689);
+            ClientSize = new Size(1030, 677);
             Controls.Add(_videoBox);
             Controls.Add(flowLayoutPanel1);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
-            MinimumSize = new Size(1036, 695);
+            MinimumSize = new Size(1036, 716);
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Form1";
@@ -300,5 +312,6 @@
         private RadioButton radioButton4;
         private RadioButton radioButton3;
         private Label label1;
+        private Label _lblAudiochannels;
     }
 }
