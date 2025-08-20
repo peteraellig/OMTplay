@@ -31,6 +31,11 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             flowLayoutPanel1 = new FlowLayoutPanel();
             _buttonPanel = new Panel();
+            label1 = new Label();
+            radioButton4 = new RadioButton();
+            radioButton3 = new RadioButton();
+            radioButton2 = new RadioButton();
+            radioButton1 = new RadioButton();
             _cbSources = new ComboBox();
             _lblTimestamp = new Label();
             _lblResolution = new Label();
@@ -59,6 +64,11 @@
             // _buttonPanel
             // 
             _buttonPanel.BackColor = Color.Silver;
+            _buttonPanel.Controls.Add(label1);
+            _buttonPanel.Controls.Add(radioButton4);
+            _buttonPanel.Controls.Add(radioButton3);
+            _buttonPanel.Controls.Add(radioButton2);
+            _buttonPanel.Controls.Add(radioButton1);
             _buttonPanel.Controls.Add(_cbSources);
             _buttonPanel.Controls.Add(_lblTimestamp);
             _buttonPanel.Controls.Add(_lblResolution);
@@ -74,6 +84,60 @@
             _buttonPanel.Name = "_buttonPanel";
             _buttonPanel.Size = new Size(1035, 73);
             _buttonPanel.TabIndex = 0;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.ForeColor = SystemColors.ControlText;
+            label1.Location = new Point(319, 4);
+            label1.Name = "label1";
+            label1.Size = new Size(42, 15);
+            label1.TabIndex = 14;
+            label1.Text = "Audio:";
+            // 
+            // radioButton4
+            // 
+            radioButton4.AutoSize = true;
+            radioButton4.Location = new Point(564, 4);
+            radioButton4.Name = "radioButton4";
+            radioButton4.Size = new Size(59, 19);
+            radioButton4.TabIndex = 13;
+            radioButton4.Text = "CH7/8";
+            radioButton4.UseVisualStyleBackColor = true;
+            radioButton4.CheckedChanged += radioButton4_CheckedChanged;
+            // 
+            // radioButton3
+            // 
+            radioButton3.AutoSize = true;
+            radioButton3.Location = new Point(495, 3);
+            radioButton3.Name = "radioButton3";
+            radioButton3.Size = new Size(59, 19);
+            radioButton3.TabIndex = 12;
+            radioButton3.Text = "CH5/6";
+            radioButton3.UseVisualStyleBackColor = true;
+            radioButton3.CheckedChanged += radioButton3_CheckedChanged;
+            // 
+            // radioButton2
+            // 
+            radioButton2.AutoSize = true;
+            radioButton2.Location = new Point(430, 3);
+            radioButton2.Name = "radioButton2";
+            radioButton2.Size = new Size(59, 19);
+            radioButton2.TabIndex = 11;
+            radioButton2.Text = "CH3/4";
+            radioButton2.UseVisualStyleBackColor = true;
+            radioButton2.CheckedChanged += radioButton2_CheckedChanged;
+            // 
+            // radioButton1
+            // 
+            radioButton1.AutoSize = true;
+            radioButton1.Location = new Point(368, 3);
+            radioButton1.Name = "radioButton1";
+            radioButton1.Size = new Size(59, 19);
+            radioButton1.TabIndex = 10;
+            radioButton1.Text = "CH1/2";
+            radioButton1.UseVisualStyleBackColor = true;
+            radioButton1.CheckedChanged += radioButton1_CheckedChanged;
             // 
             // _cbSources
             // 
@@ -115,12 +179,13 @@
             // 
             // _lblStatus
             // 
-            _lblStatus.BackColor = SystemColors.Control;
-            _lblStatus.Location = new Point(300, 51);
+            _lblStatus.BackColor = Color.Silver;
+            _lblStatus.Font = new Font("Segoe UI", 6F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            _lblStatus.Location = new Point(300, 55);
             _lblStatus.Name = "_lblStatus";
-            _lblStatus.Size = new Size(291, 15);
+            _lblStatus.Size = new Size(467, 15);
             _lblStatus.TabIndex = 5;
-            _lblStatus.Text = "Status";
+            _lblStatus.Text = "Status:";
             _lblStatus.Visible = false;
             // 
             // _btnRefresh
@@ -128,7 +193,7 @@
             _btnRefresh.BackColor = SystemColors.Control;
             _btnRefresh.FlatAppearance.BorderSize = 0;
             _btnRefresh.FlatStyle = FlatStyle.Flat;
-            _btnRefresh.Location = new Point(300, 25);
+            _btnRefresh.Location = new Point(300, 24);
             _btnRefresh.Name = "_btnRefresh";
             _btnRefresh.Size = new Size(61, 23);
             _btnRefresh.TabIndex = 4;
@@ -210,6 +275,7 @@
             Load += Form1_Load;
             flowLayoutPanel1.ResumeLayout(false);
             _buttonPanel.ResumeLayout(false);
+            _buttonPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)_videoBox).EndInit();
             ResumeLayout(false);
         }
@@ -229,5 +295,10 @@
         private Button _btnFullscreen;
         private Button _btnExit;
         private PictureBox _videoBox;
+        private RadioButton radioButton2;
+        private RadioButton radioButton1;
+        private RadioButton radioButton4;
+        private RadioButton radioButton3;
+        private Label label1;
     }
 }

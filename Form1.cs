@@ -1,13 +1,11 @@
-using libomtnet; // brings OMTDiscovery, OMTReceive, OMTFrameType
-using Microsoft.VisualBasic;
-using NAudio.CoreAudioApi;
-using NAudio.Wasapi;    // for WasapiOut
+﻿using libomtnet; // OMTDiscovery, OMTReceive, OMTFrameType
+using NAudio.CoreAudioApi; // <-- required for AudioClientShareMode (added from Nicosman)
+using NAudio.Wasapi;       // WasapiOut
 using NAudio.Wave;
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -26,14 +24,25 @@ namespace OMTplay
         private IWavePlayer? _waveOut;
         private BufferedWaveProvider? _audioBuffer;
         private bool _audioInitDone = false;
-        private bool _audioIsFloat = true;        // determined on first frame
-        private int _audioChannels = 2;           // default stereo
+
+        // Incoming (from OMT/vMix)
+        private bool _inputIsFloat = true;     //  vMix gives Float32
+        private int _inputChannels = 2;       // actual input channels
+        private int _inputSampleRate = 48000; // 48kHz
+
+        // Output device capabilities
+        private bool _deviceAcceptsFloat = true;
+        private bool _audioPermanentlyDisabled = false;
+
         private const int AUDIO_SR = 48000;       // 48 kHz
+        private bool _downmixToStereo = true;     // >2ch → stereo
 
         // --- Fullscreen state ---
         private bool _isFullscreen = false;
         private FormBorderStyle _oldBorderStyle;
         private Rectangle _oldBounds;
+
+        private int _selectedStereoPair = 0; // Add this line
 
         public Form1()
         {
@@ -45,9 +54,13 @@ namespace OMTplay
             _btnDisconnect.Click += (s, e) => Disconnect();
             _btnFullscreen.Click += (s, e) => ToggleFullscreen();
             _btnExit.Click += (s, e) => ExitWithConfirmation();
+
             KeyPreview = true;
             KeyDown += Form1_KeyDown;
             FormClosing += Form1_FormClosing;
+
+            // If not connected by Designer: //(added from Nicosman)
+            // this.Load += Form1_Load; //(added from Nicosman)
         }
 
         // --- UI: Fullscreen toggle ---
@@ -84,10 +97,7 @@ namespace OMTplay
         // --- UI: Keyboard event for fullscreen exit ---
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (_isFullscreen && e.KeyCode == Keys.Escape)
-            {
-                ToggleFullscreen();
-            }
+            if (_isFullscreen && e.KeyCode == Keys.Escape) ToggleFullscreen();
         }
 
         // --- Connection: Form load, OMT discovery initialization ---
@@ -110,20 +120,13 @@ namespace OMTplay
                 _lblStatus.Text = "OMT loaded from: " + asm;
                 _discovery = OMTDiscovery.GetInstance(); // triggers native loading
             }
-            catch (DllNotFoundException ex)
-            {
-                MessageBox.Show("Native DLL missing: " + ex.Message);
-            }
-            catch (BadImageFormatException ex)
-            {
-                MessageBox.Show("Platform mismatch (x64 required): " + ex.Message);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("OMT init error: " + ex.Message);
-            }
-            this.Text = "OMTplay 1.0.0.4 - Peter Aellig";
+            catch (DllNotFoundException ex) { MessageBox.Show("Native DLL missing: " + ex.Message); }
+            catch (BadImageFormatException ex) { MessageBox.Show("Platform mismatch (x64 required): " + ex.Message); }
+            catch (Exception ex) { MessageBox.Show("OMT init error: " + ex.Message); }
+
+            this.Text = "OMTplay 1.0.0.5 - Peter Aellig / Nicos Manadis";
             _btnDisconnect.Visible = false;
+            radioButton1.Checked = true; // Set default stereo pair selection    
         }
 
         // --- Connection: Discover available sources ---
@@ -141,7 +144,7 @@ namespace OMTplay
             }
             catch (Exception ex)
             {
-                _lblStatus.Text = "Discovery error: " + ex.Message;
+               _lblStatus.Text = "Discovery error: " + ex.Message;
             }
         }
 
@@ -173,6 +176,7 @@ namespace OMTplay
                 _rxThread.Start();
 
                 _audioInitDone = false;
+                _audioPermanentlyDisabled = false;
 
                 // UI: Update button states after connect
                 _btnConnect.Enabled = false;
@@ -218,6 +222,7 @@ namespace OMTplay
             try { _waveOut?.Dispose(); } catch { }
             _waveOut = null;
             _audioBuffer = null;
+            _audioInitDone = false;
 
             // UI: Update button states after disconnect
             _btnConnect.Enabled = true;
@@ -232,21 +237,83 @@ namespace OMTplay
             _lblTimestamp.Text = "-";
         }
 
-        // --- Audio: Initialize audio output and buffer ---
-        private void EnsureAudioInit(int sampleRate, int channels, bool isFloat,
-                             int desiredLatencyMs = 180, double bufferSeconds = 0.8)
+        // --- Audio device factory (WASAPI + fallback WaveOutEvent) ---
+        private bool TryCreateAudioDevice(int desiredLatencyMs, bool wantFloat, out IWavePlayer? player, out bool deviceIsFloat)
         {
-            if (_audioInitDone) return;
+            player = null;
+            deviceIsFloat = wantFloat;
+
+            // 1) WASAPI (timer-driven) – float
+            try
+            {
+                player = new WasapiOut(AudioClientShareMode.Shared, false, desiredLatencyMs);
+                deviceIsFloat = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("WASAPI(float) init failed: " + ex.Message);
+            }
+
+            // 2) WASAPI (timer-driven) – PCM16
+            try
+            {
+                player = new WasapiOut(AudioClientShareMode.Shared, false, Math.Max(150, desiredLatencyMs));
+                deviceIsFloat = false;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("WASAPI(PCM16) init failed: " + ex.Message);
+            }
+
+            // 3) WaveOutEvent (WinMM) – PCM16
+            try
+            {
+                var w = new WaveOutEvent { DesiredLatency = Math.Max(150, desiredLatencyMs) };
+                player = w;
+                deviceIsFloat = false;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("WaveOutEvent init failed: " + ex.Message);
+            }
+
+            return false;
+        }
+
+        // --- Audio: Initialize audio output and buffer ---
+        private void EnsureAudioInit(int sampleRate, int channels, bool incomingIsFloat,
+                                     int desiredLatencyMs = 120, double bufferSeconds = 1.5)
+        {
+            if (_audioInitDone || _audioPermanentlyDisabled) return;
+
+            // Input validation
+            if (channels <= 0 || channels > 8) channels = 2;
+            if (sampleRate < 8000 || sampleRate > 192000) sampleRate = AUDIO_SR;
+
+            int outChannels = (_downmixToStereo && channels > 2) ? 2 : channels;
+
+            _inputIsFloat = incomingIsFloat;
+            _inputChannels = channels;
+            _inputSampleRate = sampleRate;
 
             _waveOut?.Stop();
             _waveOut?.Dispose();
+            _waveOut = null;
+            _audioBuffer = null;
 
-            // WasapiOut is often more stable than WaveOutEvent
-            _waveOut = new WasapiOut(AudioClientShareMode.Shared, true, desiredLatencyMs);
+            if (!TryCreateAudioDevice(desiredLatencyMs, wantFloat: true, out _waveOut, out _deviceAcceptsFloat))
+            {
+                _audioPermanentlyDisabled = true;
+                _audioInitDone = true;
+                return;
+            }
 
-            WaveFormat fmt = isFloat
-                ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels)
-                : new WaveFormat(sampleRate, 16, channels);
+            var fmt = _deviceAcceptsFloat
+                ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, outChannels)
+                : new WaveFormat(sampleRate, 16, outChannels);
 
             _audioBuffer = new BufferedWaveProvider(fmt)
             {
@@ -256,13 +323,70 @@ namespace OMTplay
             };
             _audioBuffer.BufferLength = (int)(fmt.AverageBytesPerSecond * bufferSeconds);
 
+            // Null-Prüfung vor Init
+            if (_waveOut == null || _audioBuffer == null)
+            {
+                Debug.WriteLine("Audio initialization failed: waveOut or audioBuffer is null.");
+                _audioPermanentlyDisabled = true;
+                return;
+            }
+
             _waveOut.Init(_audioBuffer);
             _waveOut.Play();
 
-            _audioIsFloat = isFloat;
-            _audioChannels = channels;
+            if (_downmixToStereo && channels > 2)
             _audioInitDone = true;
         }
+
+        // Convert float [-1..1] -> 16-bit PCM
+        private static void FloatInterleavedToPcm16Bytes(float[] interleaved, byte[] dest)
+        {
+            int di = 0;
+            for (int i = 0; i < interleaved.Length; i++)
+            {
+                float f = interleaved[i];
+                if (f > 1f) f = 1f; else if (f < -1f) f = -1f;
+                short s = (short)(f * 32767f);
+                dest[di++] = (byte)(s & 0xFF);
+                dest[di++] = (byte)((s >> 8) & 0xFF);
+            }
+        }
+
+        // --- select Audio Stereo Pair
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Checked)
+            {
+                _selectedStereoPair = 1; // Channels 1 & 2
+            }
+        }
+
+        private void radioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Checked)
+            {
+                _selectedStereoPair = 2; // Channels 3 & 4
+            }
+        }
+
+
+        private void radioButton3_CheckedChanged(object sender, EventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Checked)
+            {
+                _selectedStereoPair = 3; // Channels 5 & 6
+            }
+        }
+
+        private void radioButton4_CheckedChanged(object sender, EventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Checked)
+            {
+                _selectedStereoPair = 4; // Channels 7 & 8
+            }
+        }
+
 
         // --- Main receive loop: handles audio and video frames ---
         private void ReceiveLoop(CancellationToken ct)
@@ -277,7 +401,9 @@ namespace OMTplay
 
                     // --- AUDIO: receive and buffer all waiting frames ---
                     int drained = 0;
-                    while (_receiver != null && _receiver.Receive(OMTFrameType.Audio, 0, ref frame))
+                    while (!_audioPermanentlyDisabled &&
+                           _receiver != null &&
+                           _receiver.Receive(OMTFrameType.Audio, 0, ref frame))
                     {
                         if (frame.Data != IntPtr.Zero && frame.DataLength > 0)
                         {
@@ -288,39 +414,114 @@ namespace OMTplay
                                 int sampleRate = frame.SampleRate > 0 ? frame.SampleRate : 48000;
                                 bool looksLikeFloat = true; // vMix always delivers Float32
 
-                                EnsureAudioInit(sampleRate, channelsGuess, looksLikeFloat, desiredLatencyMs: 100, bufferSeconds: 2.0);
+                                EnsureAudioInit(sampleRate, channelsGuess, looksLikeFloat,
+                                                desiredLatencyMs: 100, bufferSeconds: 2.0);
                             }
 
-                            // 2) Push data in correct format to buffer
+                            // 2) Push data to buffer (planar float32 → interleaved, with optional downmix)
                             if (_audioBuffer != null)
                             {
-                                if (_audioIsFloat)
+                                try
                                 {
-                                    // Convert planar to interleaved
-                                    int samplesPerChannel = frame.SamplesPerChannel;
-                                    int channels = _audioChannels;
-                                    // 1. Copy planar data from unmanaged buffer
-                                    float[] planar = new float[samplesPerChannel * channels];
-                                    Marshal.Copy(frame.Data, planar, 0, planar.Length);
+                                    int samplesPerChannel = Math.Max(0, frame.SamplesPerChannel);
+                                    int inCh = Math.Max(1, _inputChannels);
+                                    int totalSamples = samplesPerChannel * inCh;
 
-                                    // 2. Convert planar to interleaved
-                                    float[] interleaved = new float[samplesPerChannel * channels];
-                                    for (int i = 0; i < samplesPerChannel; i++)
-                                        for (int c = 0; c < channels; c++)
-                                            interleaved[i * channels + c] = planar[c * samplesPerChannel + i];
+                                    if (samplesPerChannel > 0 && totalSamples > 0)
+                                    {
+                                        // Copy planar float32 από unmanaged σε managed
+                                        int maxFloats = frame.DataLength / sizeof(float);
+                                        int copyFloats = Math.Min(totalSamples, maxFloats);
 
-                                    // 3. Convert to byte array
-                                    byte[] bytes = new byte[interleaved.Length * 4];
-                                    Buffer.BlockCopy(interleaved, 0, bytes, 0, bytes.Length);
+                                        float[] planar = new float[totalSamples];
+                                        byte[] tmp = new byte[copyFloats * sizeof(float)];
+                                        Marshal.Copy(frame.Data, tmp, 0, tmp.Length);
+                                        Buffer.BlockCopy(tmp, 0, planar, 0, tmp.Length);
 
-                                    // 4. Add to NAudio buffer
-                                    _audioBuffer.AddSamples(bytes, 0, bytes.Length);
+                                        if (_downmixToStereo && inCh > 2)
+                                        {
+                                            // Downmix zu 2 Kanälen (Stereopaar auswählen)
+                                            float[] stereo = new float[samplesPerChannel * 2];
+
+                                            for (int i = 0; i < samplesPerChannel; i++)
+                                            {
+                                                float sumL = 0f; int cntL = 0;
+                                                float sumR = 0f; int cntR = 0;
+
+                                                for (int c = 0; c < inCh; c++)
+                                                {
+                                                    // Wähle das Stereopaar basierend auf _selectedStereoPair
+                                                    if (_selectedStereoPair == 1 && (c == 0 || c == 1)) // Channels 1 & 2
+                                                    {
+                                                        float s = planar[c * samplesPerChannel + i];
+                                                        if (c == 0) { sumL += s; cntL++; } else { sumR += s; cntR++; }
+                                                    }
+                                                    else if (_selectedStereoPair == 2 && (c == 2 || c == 3)) // Channels 3 & 4
+                                                    {
+                                                        float s = planar[c * samplesPerChannel + i];
+                                                        if (c == 2) { sumL += s; cntL++; } else { sumR += s; cntR++; }
+                                                    }
+                                                    else if (_selectedStereoPair == 3 && (c == 4 || c == 5)) // Channels 5 & 6
+                                                    {
+                                                        float s = planar[c * samplesPerChannel + i];
+                                                        if (c == 4) { sumL += s; cntL++; } else { sumR += s; cntR++; }
+                                                    }
+                                                    else if (_selectedStereoPair == 4 && (c == 6 || c == 7)) // Channels 7 & 8
+                                                    {
+                                                        float s = planar[c * samplesPerChannel + i];
+                                                        if (c == 6) { sumL += s; cntL++; } else { sumR += s; cntR++; }
+                                                    }
+                                                }
+
+                                                float L = cntL > 0 ? (sumL / cntL) : 0f;
+                                                float R = cntR > 0 ? (sumR / cntR) : 0f;
+
+                                                stereo[i * 2 + 0] = L;
+                                                stereo[i * 2 + 1] = R;
+                                            }
+
+                                            if (_deviceAcceptsFloat)
+                                            {
+                                                byte[] bytes = new byte[stereo.Length * sizeof(float)];
+                                                Buffer.BlockCopy(stereo, 0, bytes, 0, bytes.Length);
+                                                _audioBuffer!.AddSamples(bytes, 0, bytes.Length);
+                                            }
+                                            else
+                                            {
+                                                byte[] pcm = new byte[stereo.Length * 2]; // 16-bit
+                                                FloatInterleavedToPcm16Bytes(stereo, pcm);
+                                                _audioBuffer!.AddSamples(pcm, 0, pcm.Length);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // inCh <= 2 : απλή interleave (planar -> interleaved)
+                                            float[] interleaved = new float[totalSamples];
+                                            for (int i = 0; i < samplesPerChannel; i++)
+                                                for (int c = 0; c < inCh; c++)
+                                                    interleaved[i * inCh + c] = planar[c * samplesPerChannel + i];
+
+                                            if (_deviceAcceptsFloat)
+                                            {
+                                                byte[] bytes = new byte[interleaved.Length * sizeof(float)];
+                                                Buffer.BlockCopy(interleaved, 0, bytes, 0, bytes.Length);
+                                                _audioBuffer!.AddSamples(bytes, 0, bytes.Length);
+                                            }
+                                            else
+                                            {
+                                                byte[] pcm = new byte[interleaved.Length * 2]; // 16-bit
+                                                FloatInterleavedToPcm16Bytes(interleaved, pcm);
+                                                _audioBuffer!.AddSamples(pcm, 0, pcm.Length);
+                                            }
+                                        }
+                                    }
                                 }
-                                else
+                                catch (Exception ax)
                                 {
-                                    byte[] bytes = new byte[frame.DataLength];
-                                    Marshal.Copy(frame.Data, bytes, 0, frame.DataLength);
-                                    _audioBuffer.AddSamples(bytes, 0, bytes.Length);
+                                    Debug.WriteLine("Audio buffer error: " + ax);
+                                    _audioPermanentlyDisabled = true;
+                                    try { _waveOut?.Stop(); _waveOut?.Dispose(); } catch { }
+                                    _waveOut = null; _audioBuffer = null;
                                 }
                             }
                         }
@@ -346,10 +547,7 @@ namespace OMTplay
                         handled = true;
                     }
 
-                    if (!handled)
-                    {
-                        Thread.Sleep(1);
-                    }
+                    if (!handled) Thread.Sleep(1);
                 }
                 catch (ThreadInterruptedException) { break; }
                 catch (ObjectDisposedException) { break; }
@@ -358,46 +556,63 @@ namespace OMTplay
                     BeginInvoke(new Action(() =>
                     {
                         _lblStatus.Text = "Receive error: " + ex.Message;
-                        MessageBox.Show(this, "Error in receive loop:\n" + ex.Message, "OMT Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, "Error in receive loop:\n" + ex.ToString(),
+                            "OMT Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }));
                 }
             }
         }
 
-        // --- Video: Convert BGRA frame to Bitmap ---
+        // --- Video: Convert BGRA frame to Bitmap (resistant to negative stride) ---
         private static Bitmap? CreateBitmapFromBGRA(OMTMediaFrame frame)
         {
-            // Additional validation
-            if (frame.Data == IntPtr.Zero || frame.Width <= 0 || frame.Height <= 0 || frame.Stride <= 0)
+            if (frame.Data == IntPtr.Zero || frame.Width <= 0 || frame.Height <= 0)
                 return null;
 
             try
             {
+                int rows = frame.Height;
+                int srcStride = frame.Stride;
+                bool srcBottomUp = srcStride < 0;
+                int absSrcStride = Math.Abs(srcStride);
+
+                if (frame.DataLength > 0)
+                {
+                    int maxStrideBySize = frame.DataLength / Math.Max(1, rows);
+                    absSrcStride = Math.Min(absSrcStride, maxStrideBySize);
+                }
+
                 var bmp = new Bitmap(frame.Width, frame.Height, PixelFormat.Format32bppArgb);
                 var rect = new Rectangle(0, 0, frame.Width, frame.Height);
                 var bmpData = bmp.LockBits(rect, ImageLockMode.WriteOnly, bmp.PixelFormat);
 
-                int srcStride = frame.Stride;
-                int dstStride = bmpData.Stride;
-                int rows = frame.Height;
-                int bytesPerRow = Math.Min(Math.Abs(dstStride), Math.Abs(srcStride));
-
-                for (int y = 0; y < rows; y++)
+                try
                 {
-                    IntPtr srcRow = frame.Data + y * srcStride;
-                    IntPtr dstRow = bmpData.Scan0 + y * dstStride;
+                    int dstStride = bmpData.Stride;
+                    int bytesPerRow = Math.Min(absSrcStride, Math.Abs(dstStride));
+                    byte[] rowBuf = new byte[bytesPerRow];
 
-                    byte[] row = new byte[bytesPerRow];
-                    Marshal.Copy(srcRow, row, 0, bytesPerRow);
-                    Marshal.Copy(row, 0, dstRow, bytesPerRow);
+                    for (int y = 0; y < rows; y++)
+                    {
+                        int sy = srcBottomUp ? (rows - 1 - y) : y;
+
+                        IntPtr srcRow = IntPtr.Add(frame.Data, sy * srcStride);
+                        IntPtr dstRow = IntPtr.Add(bmpData.Scan0, y * dstStride);
+
+                        Marshal.Copy(srcRow, rowBuf, 0, bytesPerRow);
+                        Marshal.Copy(rowBuf, 0, dstRow, bytesPerRow);
+                    }
                 }
-                bmp.UnlockBits(bmpData);
+                finally
+                {
+                    bmp.UnlockBits(bmpData);
+                }
+
                 return bmp;
             }
             catch (ArgumentException ex)
             {
-                // Log or ignore error
-                Debug.WriteLine("Bitmap error: " + ex.Message);
+                Debug.WriteLine("Bitmap error: " + ex);
                 return null;
             }
         }
@@ -410,11 +625,7 @@ namespace OMTplay
         {
             var result = MessageBox.Show(this, "Are you sure you want to exit?", "Confirm Exit",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-            if (result == DialogResult.Yes)
-            {
-                Close();
-            }
+            if (result == DialogResult.Yes) Close();
         }
 
         // --- Video: Format timestamp for display ---
@@ -428,7 +639,6 @@ namespace OMTplay
             int minutes = (int)((totalSeconds % 3600) / 60);
             int seconds = (int)(totalSeconds % 60);
 
-            // Calculate frame from remainder and framerate
             double frameRate = frameRateD != 0 ? (double)frameRateN / frameRateD : 25.0; // fallback 25fps
             int frame = (int)(remainder * frameRate / 10_000_000);
 
@@ -438,11 +648,8 @@ namespace OMTplay
         // --- Video: Format resolution and framerate for display ---
         private static string FormatResolution(OMTMediaFrame frame)
         {
-            // Calculate framerate
             double fps = frame.FrameRateD != 0 ? (double)frame.FrameRateN / frame.FrameRateD : 0;
-            // Height as "p" (e.g. 1080p)
             string res = $"{frame.Height}p";
-            // Framerate as integer if possible
             string fpsStr = fps > 0 ? $"{Math.Round(fps)}" : "?";
             return $"{res}{fpsStr}";
         }
