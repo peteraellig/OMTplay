@@ -42,8 +42,10 @@ namespace OMTplay
         private bool _isFullscreen = false;
         private FormBorderStyle _oldBorderStyle;
         private Rectangle _oldBounds;
-
+       
         private int _selectedStereoPair = 0; // Add this line
+
+       
 
         public Form1()
         {
@@ -130,9 +132,34 @@ namespace OMTplay
             catch (BadImageFormatException ex) { MessageBox.Show("Platform mismatch (x64 required): " + ex.Message); }
             catch (Exception ex) { MessageBox.Show("OMT init error: " + ex.Message); }
 
-            this.Text = "OMTplay 1.0.0.6 - Peter Aellig / Nicos Manadis";
+            this.Text = "OMTplay 1.0.0.7 - Peter Aellig / Nicos Manadis";
             _btnDisconnect.Visible = false;
             radioButton1.Checked = true; // Set default stereo pair selection    
+
+            // Lade die gespeicherte Einstellung
+            _chkStartFullscreen.Checked = Properties.Settings.Default.StartFullscreen;
+            _cbSourceSelection.SelectedItem = Properties.Settings.Default.SelectedSource.ToString();
+
+            // Prüfe, ob die Checkbox aktiviert ist
+            if (_chkStartFullscreen.Checked)
+            {
+                // Versuche, die gespeicherte Quelle zu verbinden
+                int selectedSource = Properties.Settings.Default.SelectedSource;
+
+                // Prüfe, ob die gewünschte Quelle existiert
+                if (selectedSource > 0 && selectedSource <= _cbSources.Items.Count)
+                {
+                    _cbSources.SelectedIndex = selectedSource - 1; // Wähle die gewünschte Quelle aus (0-basiert)
+                    ConnectSelected(); // Stelle die Verbindung her
+                    ToggleFullscreen(); // Starte im Vollbildmodus
+                }
+                else
+                {
+                    // Keine Verbindung herstellen, wenn die gewünschte Quelle nicht existiert
+                    MessageBox.Show(this, $"The desired Autostart source ({selectedSource}) is not available.",
+                        "Autostart connection failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
         }
 
         // --- Connection: Discover available sources ---
@@ -666,6 +693,21 @@ namespace OMTplay
             string res = $"{frame.Height}p";
             string fpsStr = fps > 0 ? $"{Math.Round(fps)}" : "?";
             return $"{res}{fpsStr}";
+        }
+
+        private void _chkStartFullscreen_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.StartFullscreen = _chkStartFullscreen.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void _cbSourceSelection_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_cbSourceSelection.SelectedItem != null && int.TryParse(_cbSourceSelection.SelectedItem.ToString(), out int selectedSource))
+            {
+                Properties.Settings.Default.SelectedSource = selectedSource; // Speichere die ausgewählte Quelle
+                Properties.Settings.Default.Save(); // Speichere die Einstellungen
+            }
         }
     }
 }

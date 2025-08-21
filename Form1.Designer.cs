@@ -31,6 +31,8 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             flowLayoutPanel1 = new FlowLayoutPanel();
             _buttonPanel = new Panel();
+            _cbSourceSelection = new ComboBox();
+            _chkStartFullscreen = new CheckBox();
             _lblAudiochannels = new Label();
             label1 = new Label();
             radioButton4 = new RadioButton();
@@ -65,6 +67,8 @@
             // _buttonPanel
             // 
             _buttonPanel.BackColor = Color.Silver;
+            _buttonPanel.Controls.Add(_cbSourceSelection);
+            _buttonPanel.Controls.Add(_chkStartFullscreen);
             _buttonPanel.Controls.Add(_lblAudiochannels);
             _buttonPanel.Controls.Add(label1);
             _buttonPanel.Controls.Add(radioButton4);
@@ -86,6 +90,28 @@
             _buttonPanel.Name = "_buttonPanel";
             _buttonPanel.Size = new Size(1035, 100);
             _buttonPanel.TabIndex = 0;
+            // 
+            // _cbSourceSelection
+            // 
+            _cbSourceSelection.FormattingEnabled = true;
+            _cbSourceSelection.Items.AddRange(new object[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" });
+            _cbSourceSelection.Location = new Point(924, 72);
+            _cbSourceSelection.Name = "_cbSourceSelection";
+            _cbSourceSelection.Size = new Size(42, 23);
+            _cbSourceSelection.TabIndex = 16;
+            _cbSourceSelection.Text = "1";
+            _cbSourceSelection.SelectedIndexChanged += _cbSourceSelection_SelectedIndexChanged;
+            // 
+            // _chkStartFullscreen
+            // 
+            _chkStartFullscreen.AutoSize = true;
+            _chkStartFullscreen.Location = new Point(725, 74);
+            _chkStartFullscreen.Name = "_chkStartFullscreen";
+            _chkStartFullscreen.Size = new Size(196, 19);
+            _chkStartFullscreen.TabIndex = 11;
+            _chkStartFullscreen.Text = "start fullscreen  with sourceNr →";
+            _chkStartFullscreen.UseVisualStyleBackColor = true;
+            _chkStartFullscreen.CheckedChanged += _chkStartFullscreen_CheckedChanged;
             // 
             // _lblAudiochannels
             // 
@@ -262,7 +288,6 @@
             // 
             // _videoBox
             // 
-            _videoBox.Dock = DockStyle.None;
             _videoBox.Location = new Point(0, 106);
             _videoBox.Name = "_videoBox";
             _videoBox.Size = new Size(1030, 565);
@@ -313,5 +338,7 @@
         private RadioButton radioButton3;
         private Label label1;
         private Label _lblAudiochannels;
+        private CheckBox _chkStartFullscreen;
+        private ComboBox _cbSourceSelection;
     }
 }
